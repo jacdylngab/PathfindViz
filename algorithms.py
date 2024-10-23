@@ -8,48 +8,60 @@ import math
 def get_city_id(city_name):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT city_id FROM Cities WHERE city_name = %s", (city_name))
-    result = cur.fetchone()
+    try:
+        cur.execute("SELECT city_id FROM Cities WHERE city_name = %s", (city_name,))
+        result = cur.fetchone()
 
-    if result:
-        return result[0]
-    else:
-        print("No city found")
+        if result:
+            return result[0]
+        else:
+            print("No city found")
+    finally:
+        cur.close()
+        conn.close()
 
 # Function to get the city_name based from the cities table
 def get_city_name(city_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT city_name FROM Cities WHERE city_id = %s", (city_id))
-    result = cur.fetchone()
+    try:
+        cur.execute("SELECT city_name FROM Cities WHERE city_id = %s", (city_id,))
+        result = cur.fetchone()
 
-    if result:
-        return result[0]
-    else:
-        print("No city_name found")
+        if result:
+            return result[0]
+        else:
+            print("No city_name found")
+    finally:
+        cur.close()
+        conn.close()
 
 # Function to get the neighbor cities of particular cities from the connections table 
 def get_neighbors(city_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("""
-        SELECT Cities.city_name, Connections.distance
-        FROM Cities JOIN Connections 
-        ON Cities.city_id = Connections.end_city_id
-        WHERE Connections.start_city_id = %s 
-    """, (city_id))
-    results = cur.fetchall()
+    try:
+        cur.execute("""
+            SELECT Cities.city_name, Connections.distance
+            FROM Cities JOIN Connections 
+            ON Cities.city_id = Connections.end_city_id
+            WHERE Connections.start_city_id = %s 
+        """, (city_id,))
+        results = cur.fetchall()
 
-    neighbors = []
-    if results:
-        for neighbor in results:
-            # Convert the distance from Decimal (from the database) to an integer
-            city_name = neighbor[0]
-            distance = int(neighbor[1])
-            neighbors.append((city_name, distance))
-        return neighbors
-    else:
-        print("No neighbor city found")
+        neighbors = []
+        if results:
+            for neighbor in results:
+                # Convert the distance from Decimal (from the database) to an integer
+                city_name = neighbor[0]
+                distance = int(neighbor[1])
+                neighbors.append((city_name, distance))
+            return neighbors
+        else:
+            print("No neighbor city found")
+    finally:
+        cur.close()
+        conn.close()
 
 # BFS function to find the goal city starting from a particular city.
 # It explores cities using a queue. It uses the FIFO (First In First Out) structure.
@@ -177,20 +189,24 @@ def ucs(start_city_name, goal_city_name):
 def get_coordinates(city_id):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("""
-        SELECT latitude, longitude
-        FROM Cities
-        WHERE city_id = %s 
-    """, (city_id))
-    result = cur.fetchone()
-    
-    if result:
-        latitude = float(result[0])
-        longitude = float(result[1])
-        coordinates = (latitude, longitude)
-        return coordinates
-    else:
-        print("No city_coordinates found")
+    try:
+        cur.execute("""
+            SELECT latitude, longitude
+            FROM Cities
+            WHERE city_id = %s 
+        """, (city_id,))
+        result = cur.fetchone()
+        
+        if result:
+            latitude = float(result[0])
+            longitude = float(result[1])
+            coordinates = (latitude, longitude)
+            return coordinates
+        else:
+            print("No city_coordinates found")
+    finally:
+        cur.close()
+        conn.close()
 
 # Heuristic function (Manhattan distance)
 def heuristic(a, b):

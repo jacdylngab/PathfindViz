@@ -1,4 +1,5 @@
 from db_connection import get_db_connection
+from algorithms import get_city_id 
 import hashlib
 import os
 
@@ -17,17 +18,21 @@ def salt_hash_password(password):
     return salt, hashed_password
 
 # Function to insert a user in the DB 
-def insert_user(username, password, role):
+def insert_user(username, password, start_city_name, end_city_name, algorithm_chosen):
     conn = get_db_connection()
     cur = conn.cursor()
+
+    # Get the start_city_id and the end_city_id
+    start_city_id = get_city_id(start_city_name)
+    end_city_id = get_city_id(end_city_name)
 
     # Hash and generate a salt for the password
     salt, hashed_password = salt_hash_password(password)
     try:
         cur.execute("""
-            INSERT INTO Users (username, salt, password, role)
-            VALUES (%s, %s, %s, %s)""",
-                    (username, salt, hashed_password, role))
+            INSERT INTO Users (username, salt, password, start_city_id, end_city_id, algorithm_chosen)
+            VALUES (%s, %s, %s, %s, %s, %s)""",
+                    (username, salt, hashed_password, start_city_id, end_city_id, algorithm_chosen))
         conn.commit()
     finally:
         cur.close()
@@ -126,6 +131,46 @@ def delete_user(username):
     finally:
         cur.close()
         conn.close()
+
+# Function to update the user information. 
+# This might happen when the user selects other cities to explore 
+# or try to use another algorithm 
+def update_start_and_end_city(username, new_start_city_name, new_end_city_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Get start_city_id and end_city_id
+    new_start_city_id = get_city_id(new_start_city_name)
+    new_end_city_id = get_city_id(new_end_city_name)
+
+    try:
+        cur.execute("""
+            UPDATE Users
+            SET start_city_id = %s, end_city_id = %s 
+            WHERE username = %s""",
+                    (new_start_city_id, new_end_city_id, username))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
+# Function to update the algorithm used by the user.
+def update_algorithm(username, new_algorithm_chosen):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("""
+            UPDATE Users
+            SET algorithm_chosen = %s
+            WHERE username = %s""",
+                    (new_algorithm_chosen, username))
+        conn.commit()
+    finally:
+        cur.close()
+        conn.close()
+
+print(update_algorithm('ngabjac', 'a*star'))
 
 # Function to implement the login functionality
 def login():

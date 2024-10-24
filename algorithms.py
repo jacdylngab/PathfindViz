@@ -36,6 +36,30 @@ def get_city_name(city_id):
         cur.close()
         conn.close()
 
+# Function to check whether a city is in the database 
+def city_in_DB(city_name):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Get the city ID 
+    city_id = get_city_id(city_name)
+    try:
+        cur.execute("""
+            SELECT city_name 
+            FROM Cities
+            WHERE city_id = %s""",
+                    (city_id,))
+
+        result = cur.fetchone()
+        
+        if result:
+            return True
+        else:
+            return False
+    finally:
+        cur.close()
+        conn.close()
+
 # Function to get the neighbor cities of particular cities from the connections table 
 def get_neighbors(city_id):
     conn = get_db_connection()
@@ -283,22 +307,4 @@ def reconstructPath(cameFrom, current_city_id):
         total_path_names.append(get_city_name(city_id))
 
     return total_path_names
-
-#path = bfs('seattle', 'miami')
-#print("BFS Path found: ", path)
-#path = dfs('seattle', 'miami')
-#print("DFS Path found: ", path)
-#path = ucs('seattle', 'miami')
-#print("UCS Path found: ", path)
-#path = a_star_search('seattle', 'miami')
-#print("A* Star Path found: ", path)
-#print()
-#path = bfs('losangeles', 'boston')
-#print("BFS Path found: ", path)
-#path = dfs('losangeles', 'boston')
-#print("DFS Path found: ", path)
-#path = ucs('losangeles', 'boston')
-#print("UCS Path found: ", path)
-#path = a_star_search('losangeles', 'boston')
-#print("A* Star Path found: ", path)
 

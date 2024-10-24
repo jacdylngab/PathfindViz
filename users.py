@@ -2,6 +2,7 @@ from db_connection import get_db_connection
 from algorithms import get_city_id 
 import hashlib
 import os
+from algorithms import bfs, dfs, ucs, a_star_search, city_in_DB
 
 # Everything I used about hashing and salting the password of the user, I did not come up with it on my own. 
 # I saw it online (I used ChatGPT to help me understand and implement the concepts of hashing and salting) and that sounded very cool to me 
@@ -18,21 +19,17 @@ def salt_hash_password(password):
     return salt, hashed_password
 
 # Function to insert a user in the DB 
-def insert_user(username, password, start_city_name, end_city_name, algorithm_chosen):
+def insert_user(username, password):
     conn = get_db_connection()
     cur = conn.cursor()
-
-    # Get the start_city_id and the end_city_id
-    start_city_id = get_city_id(start_city_name)
-    end_city_id = get_city_id(end_city_name)
 
     # Hash and generate a salt for the password
     salt, hashed_password = salt_hash_password(password)
     try:
         cur.execute("""
-            INSERT INTO Users (username, salt, password, start_city_id, end_city_id, algorithm_chosen)
-            VALUES (%s, %s, %s, %s, %s, %s)""",
-                    (username, salt, hashed_password, start_city_id, end_city_id, algorithm_chosen))
+            INSERT INTO Users (username, salt, password)
+            VALUES (%s, %s, %s)""",
+                    (username, salt, hashed_password))
         conn.commit()
     finally:
         cur.close()
@@ -70,7 +67,7 @@ def re_salt_hash_password(password, salt):
 # Function to check whether the password is correct or not. 
 # First retrieve the password from the DB based on the username and then check if it matches
 # with what the user entered.
-def check_password(username, password):
+def right_password(username, password):
     conn = get_db_connection()
     cur = conn.cursor()
     try:
@@ -118,9 +115,10 @@ def update_password(username, new_password):
         conn.close()
 
 # Function to delete a user from the database. This can be used in case the user wants to delete their account.
-def delete_user(username):
+def delete_user():
     conn = get_db_connection()
     cur = conn.cursor()
+    username = input("Choose a username: ")
 
     try:
         cur.execute("""
@@ -170,40 +168,111 @@ def update_algorithm(username, new_algorithm_chosen):
         cur.close()
         conn.close()
 
-print(update_algorithm('ngabjac', 'a*star'))
+# Function to create an account 
+def create_account():
+    new_username = input("Choose a username: ")
+    new_password = input("Choose a password: ")
+    insert_user(new_username, new_password)
+    print("Account successfully created. You can log in now.")
 
-# Function to implement the login functionality
+# Function to log the user into the program 
 def login():
-    print("Pathfinding Algorithms Visualization: Explore BFS, DFS, UCS, and A* in Action.")
-    print()
-    print("Log in")
-    print("Enter 'exit' quit")
     while True:
         username = input("Enter your username: ")
+
+        if not user_in_DB(username):
+            print("The username you entered is invalid.")
+            print("1. Try again.")
+            print("2. Create Account. ")
+            option = input("Enter your option (1 or 2): ")
+
+            if option == '1':
+                continue
+            
+            elif option == '2':
+                create_account()
+                return 
+
+            else:
+                print("Invalid choice. Please enter '1' or '2'.")
+
+        else:
+            break
+
+    while True: 
         password = input("Enter your password: ")
-        role = input("Enter your role ('admin', or 'user'): ")
 
-        if user_in_DB(username):
-            print("The username you entered is already being used. Choose a different username.")
-        if check_password(password):
-            print("The password you entered is incorrect.")
-            print("Try again or enter 'change your password' to change your password")
-        if check_role(role):
-            print("")
+        if not right_password(username, password):
+            print("The password you entered is incorrect")
+            print("1. Try again.")
+            print("2. Change your password")
+            option = input("Enter your option (1 or 2): ")
 
-print(login())
+            if option == '1':
+                continue
 
-#while True:
-#    username = input("Enter the username: ")
-#    password = input("Enter your password: ")
-#    role = input("Enter your role: ")
-#
-#    if user_in_DB(username):
-#        print("The username you entered  is already in the DB bro")
-#        print("Choose a different username")
-#
-#    if role != 'admin' or role != 'user':
-#        print("The role should be 'admin' or 'user'")
-#
-#    else:
-#        insert_user(username, password, role)
+            elif option == '2':
+                new_password = input("Enter your new password: ")
+                update_password(username, new_password)
+            
+            else:
+                print("Invalid choice. Please enter '1' or '2'.")
+
+        else:
+            break 
+
+    while True:
+        start_city_name = input("Enter a starting city: ").lower().replace(" ", "")
+
+        if not city_in_DB(start_city_name):
+            print("The starting city you entered is not in the database. Try again.")
+
+        else:
+            break 
+
+    while True:
+        end_city_name = input("Enter an ending city: ").lower().replace(" ", "")
+        
+        if not city_in_DB(end_city_name):
+            print("The ending city you entered is not in the database. Try again.")
+
+        else:
+            break 
+
+    while True:
+        print("Choose from the following algorithms the one you want to use:")
+        print("1. BFS")
+        print("2. DFS")
+        print("3. UCS")
+        print("4. A*Star")
+        option = input("Enter you option ('bfs', 'dfs', 'ucs', or 'a*star'): ").lower()
+
+        if option == 'bfs':
+            path = bfs(start_city_name, end_city_name)
+            print("Breadth First Search Path found: ", path)
+            break 
+
+        elif option == 'dfs':
+            path = dfs(start_city_name, end_city_name)
+            print("Depth First Search Path found: ", path)
+            break 
+
+        elif option == 'ucs':
+            path = ucs(start_city_name, end_city_name)
+            print("Uniformed Cost Search Path found: ", path)
+            break 
+
+        elif option == 'a*star':
+            path = a_star_search(start_city_name, end_city_name)
+            print("A*Star Path found: ", path)
+            break
+        
+        else:
+            print("Invalid choice. Please enter bfs, dfs, ucs, or a*star")
+
+    # Update the cities from the previous selected cities when the user last logged in.
+    update_start_and_end_city(username, start_city_name, end_city_name)
+
+    # Update the algorithm from the previous selected algorithm when the user last logged in.
+    update_algorithm(username, option)
+

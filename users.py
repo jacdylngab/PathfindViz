@@ -217,7 +217,28 @@ def update_algorithm(username, new_algorithm_chosen):
 
 # Function to create an account 
 def create_account():
-    new_username = input("Choose a username: ")
+    while True:
+        new_username = input("Enter your username: ")
+
+        if user_in_DB(new_username):
+            print("The username you entered is already being used.")
+            print("1. Try again.")
+            print("2. Create Account. ")
+            option = input("Enter your option (1 or 2): ")
+
+            if option == '1':
+                continue
+            
+            elif option == '2':
+                create_account()
+                return 
+
+            else:
+                print("Invalid choice. Please enter '1' or '2'.")
+
+        else:
+            break
+
     new_password = input("Choose a password: ")
     insert_user(new_username, new_password)
     print("Account successfully created. You can log in now.")
@@ -291,8 +312,8 @@ def login():
         print("1. BFS")
         print("2. DFS")
         print("3. UCS")
-        print("4. A*Star")
-        option = input("Enter you option ('bfs', 'dfs', 'ucs', or 'a*star'): ").lower()
+        print("4. AStar")
+        option = input("Enter you option ('bfs', 'dfs', 'ucs', or 'astar'): ").lower()
 
         if option == 'bfs':
             path = bfs(start_city_name, end_city_name)
@@ -309,7 +330,7 @@ def login():
             print("Uniformed Cost Search Path found: ", path)
             break 
 
-        elif option == 'a*star':
+        elif option == 'astar':
             path = a_star_search(start_city_name, end_city_name)
             print("A*Star Path found: ", path)
             break

@@ -118,14 +118,61 @@ def update_password(username, new_password):
 def delete_user():
     conn = get_db_connection()
     cur = conn.cursor()
-    username = input("Choose a username: ")
 
+    confirmation = input("Are you sure you want to delete your account? Enter 'yes' to confirm: ")
+    if confirmation.lower() != 'yes':
+        print("Deletion of account was successfully cancelled.")
+        return 
+
+    while True:
+        username = input("Choose a username: ")
+
+        if not user_in_DB(username):
+            print("The username you entered is invalid.")
+            print("1. Try again.")
+            print("2. Cancel the deletion.")
+            option = input("Enter your option ('1' or '2'): ")
+
+            if option == '1':
+                continue
+            
+            elif option == '2':
+                return 
+
+            else:
+                print("Invalid choice. Please enter '1' or '2'.")
+
+        else:
+            break
+
+    while True: 
+        password = input("Enter your password: ")
+
+        if not right_password(username, password):
+            print("The password you entered is incorrect")
+            print("1. Try again.")
+            print("2. Cancel the deletion.")
+            option = input("Enter your option ('1' or '2'): ")
+
+            if option == '1':
+                continue
+
+            elif option == '2':
+                return
+            
+            else:
+                print("Invalid choice. Please enter '1' or '2'.")
+
+        else:
+            break 
+    
     try:
         cur.execute("""
             DELETE FROM Users
             WHERE username = %s""",
                     (username,))
         conn.commit()
+        print("Your account was deleted successfully.")
     finally:
         cur.close()
         conn.close()
